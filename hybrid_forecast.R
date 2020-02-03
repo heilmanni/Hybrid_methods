@@ -1,46 +1,56 @@
-#this function forecasts values based on a hybrid methods
-#the best arma model could be calculated with arima_prediction function, please use the same parameters (ar, ma, d)
-#you have to source the neural_network function
-#in_sample should be a timeseries on which the function will predict
-#h is lenght of the forecast; recommended choosing the lenght of out-of-sample timeseries
-#p means the maximum number of embedding dimensions - it will be calculated from 0 to this number
-#size refers to the number of nodes in the hidden layer - it will be also calculated from 0 to this number
-#brake should be given between 0 and 1 - it refers to the proportion of training set used for ann models, based on the residuals of arma model
+#this function calculates an MSE value based on a hybrid method
+#y is the result timeseries - it must be a ts or vector
+#xreg is vector or matrix which contains the regressors
+#lisd is the length of in_sample timeseries
+#losd is the length of out_of_sample timeseries
+#lisd and losd should be positive integers; lisd + losd cannot be longer than y
+#phi is the optimal number of ar lag - the best arx model can be calculated with arx_forecast function, please use the same parameters as in the first part of analysis
+#brake should be given between 0 and 1 - it refers to the proportion of the training set to the whole in the ann model, based on the residuals of arx model
+#max_dim shows the maximum number of embedding dimensions for testing - it must be a positive integer; 0 to max_dim the results will be  calculated
+#max_nodes shows the maximum number of nodes for testing - it must be a positive integer; 0 to max_nodes the results will be calculated
+#required functions: arx_forecast, ann_forecast
 
-hybrid_forecast <- function(in_sample, h, ar, ma, d, p, size, brake)
+hybrid_forecast <- function(y, xreg, lisd, losd, phi, brake, max_dim, max_nodes)
 {
-  #if the in_sample data are not given in a vector format we have to change it
-  in_sample <- as.vector(in_sample)
+  #creating a vector for the forecasts
+  predict <- c()
   
-  #calculating the best parameters for the forecasting
-  arma_model <- arima(in_sample, order = c(ar, d, ma)) #an arma model with given parameters
-  arma_res <- arma_model$residuals #residuals of the model
-  
-  #creating a test and training set at a brakepoint (which gives the proportion of the training set to the whole)
-  border <- as.integer(length(arma_model$residuals)*brake) 
-  arma_res_training <- arma_res[1:border]
-  arma_res_test <- arma_res[(border+1):length(arma_res)]
-  
-  #searching for the best ann modell on the residuals of arma_model
-  #required function: neural_network
-  arma_res_ann <- neural_network(training = arma_res_training, test = arma_res_test, dimension = p, nodes = size)
-  
-  #choosing the best model based on mse
-  best_param <- arma_res_ann[which.min(arma_res_ann[,3]),]
-  best_p <- as.numeric(best_param[1])
-  best_size <- as.numeric(best_param[2])
-  
-  #forecasting with the given params
-  for (i in 1:h)
+  for (pred in 0:(losd-1))
   {
-    arma_fcast <- as.numeric(forecast(arima(in_sample, order = c(ar, d, ma)), h = 1)$mean) #arma forecast for the next period
-    nn_fcast <- forecast(nnetar(arma_res, p = best_p, size = best_size, repeats = 5), h = 1)$scalex$center #nn forecast for the next period's residual
-    fcast <- arma_fcast + nn_fcast #the forecast is the sum of two predictions
-    in_sample <- c(in_sample, fcast) #broaden the in_sample with the fcast
-    arma_res <- c(arma_res, nn_fcast) #broaden the arma_res with the nn_fact as the next residual
+    y_in_sample <- y[(1+pred):(lisd+pred)] #y has always the same length, but the start and ending points are different
+    x_reg_in_sample <- xreg[(1+pred):(lisd+pred),] #x has always the same length, but the start and ending points are different
+    
+    
+    #calculating the best parameters for the forecasting
+    arx_model <- arx(y = y_in_sample, ar = phi, mxreg = x_reg_in_sample, mc = T) #an arx model with a given ar lag
+    arx_res <- arx_model$residuals #residuals of the model
+    
+    #creating a test and training set at a brakepoint (which gives the proportion of the training set to the whole)
+    border <- as.integer(length(arx_res)*brake)
+    
+    #searching for the best ann modell on the residuals of arx_model
+    #required function: ann_forecast
+    arx_res_ann <- ann_forecast(ltrain = border, ltest = (length(arx_res)-border), y = arx_res, 
+                                xreg = x_reg_in_sample, max_dim = max_dim, max_nodes = max_nodes)
+    
+    #choosing the best model based on mse
+    best_param <- arx_res_ann[which.min(arx_res_ann[,3]),]
+    best_p <- as.numeric(best_param[1])
+    best_size <- as.numeric(best_param[2])
+    
+    #forecasting with the given params
+    arx_fcast <- as.numeric(forecast(object = fitted(arx_model), h = 1)[[2]]) #arx forecast for the next period
+    nn_fcast <- as.numeric(forecast(object = fitted(nnetar(y = arx_res, xreg = x_reg_in_sample[(phi+1):lisd,],
+                                                           p = best_p, size = best_size, repeats = 10)),
+                                    h = 1)[[2]]) #nn forecast for the next period's residual
+    fcast <- arx_fcast + nn_fcast #the forecast is the sum of two predictions
+    
+    predict <- c(predict, fcast) #binding the earlier and new forecasts
+    
+    print(pred)
   }
   
-  return(in_sample)
+  MSE_hybrid <- mse(actual = y[(lisd+1):(lisd+losd)], predicted = predict)
+  
+  return((MSE_hybrid))
 }
-
-
