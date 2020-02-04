@@ -1,4 +1,4 @@
-#this function give a matrix as result which contains the cumulated errors elements by elements
+#this function give a matrix as result which contains the summed errors elements by elements
 #res_data should be a matrix which contains residuals of time-series
 
 
@@ -13,7 +13,7 @@ sum_res <- function(res_data)
   {
     for (i in 1:losd)
     {
-      sum_res[j,i] <- sum(abs(res_GDP[j,1:i])) #cumulating the absolute value of the residuals in each row
+      sum_res[j,i] <- sum(abs(res_GDP[j,1:i])) #sum the absolute value of the residuals in each row
     }
   }
   colnames(sum_res) <- c(1:losd)
