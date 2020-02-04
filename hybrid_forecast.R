@@ -1,4 +1,4 @@
-#this function calculates an MSE value based on a hybrid method
+#this function calculates an MSE value based on a hybrid method and shows the predicted values
 #y is the result timeseries - it must be a ts or vector
 #xreg is vector or matrix which contains the regressors
 #lisd is the length of in_sample timeseries
@@ -51,6 +51,7 @@ hybrid_forecast <- function(y, xreg, lisd, losd, phi, brake, max_dim, max_nodes)
   }
   
   MSE_hybrid <- mse(actual = y[(lisd+1):(lisd+losd)], predicted = predict)
+  final <- c(MSE_hybrid, predict)
   
-  return((MSE_hybrid))
+  return(final)
 }
