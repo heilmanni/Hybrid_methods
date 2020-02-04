@@ -1,4 +1,4 @@
-#this function calculate MSE values for different ARX models
+#this function calculate MSE values for different ARX models and shows the predicted values
 #lisd is the length of in_sample timeseries
 #losd is the length of out_of_sample timeseries
 #lisd and losd should be positive integers; lisd + losd cannot be longer than y
@@ -10,6 +10,7 @@ arx_forecast <- function(lisd, losd, y, xreg, max_ar)
 {
   #creating a dataframe for final results
   info <- data.frame()
+  forecasting <- data.frame()
   
   for (phi in 1:max_ar)
   {
@@ -31,6 +32,9 @@ arx_forecast <- function(lisd, losd, y, xreg, max_ar)
     p_value <- as.numeric(p_value[3]) #defining p-value as a numeric variable
     MSE_ARX <- mse(actual = y[(lisd+1):(lisd+losd)], predicted = predict) #computing the MSE value between out-of-sample and forecasted values
     info <- rbind(info, cbind(phi, MSE_ARX, p_value)) #binding the most important information
+    forecasting <- rbind(forecasting, predict) #binding the predicted values
   }
-  return(info)
+  final <- cbind(info, forecasting)
+  colnames(final) <- c("phi", "MSE_ARX", "p_value", c(1:losd))
+  return(final)
 }
