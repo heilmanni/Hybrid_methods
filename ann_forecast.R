@@ -39,7 +39,7 @@ ann_forecast <- function(ltrain, ltest, y, xreg, max_dim, max_nodes)
 
 #this function is a simplier version of ann_forecast function
 #here the number of embedding dimensions and nodes must be given (as positive integers)
-#this function shows an MSE value for an out-of-sample set
+#this function shows an MSE value for an out-of-sample set and the predicted values
 
 ann_out_forecast <- function(lisd, losd, dim, nodes, y, xreg)
 {
@@ -56,6 +56,7 @@ ann_out_forecast <- function(lisd, losd, dim, nodes, y, xreg)
     predict <- c(predict, fcast) #binding the earlier and new forecasts
   }
   MSE_ANN_out <- mse(actual = y[(lisd+1):(lisd+losd)], predicted = predict) #computing the MSE value between out-of-sample and forecasted values
+  final <- c(MSE_ANN_out, predict)
   
-  return(MSE_ANN_out)
+  return(final)
 }
