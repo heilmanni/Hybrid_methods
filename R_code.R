@@ -1,4 +1,4 @@
-#This file forecast in three different ways: ARIMA, ANN and hibrid methology will be used
+#Using this file we can forecast in three different ways: with ARIMA, ANN and hibrid methology
 
 set.seed(2365)
 
@@ -23,30 +23,34 @@ y_GDP <- y_GDP[[1]]
 y_PCE <- phil_data[,3]
 y_PCE <- y_PCE[[1]]
 
-#the regressors are the columns 3 to 9
+#the regressors are the columns from 3 up to 9
 x_reg <- phil_data[,4:9]
 x_reg <- cbind(x_reg[[1]], x_reg[[2]], x_reg[[3]], x_reg[[4]], x_reg[[5]], x_reg[[6]])
 
 
-#plot the timeseries
+#plotting the timeseries
 data_all <-  data.frame()
 data_all <- cbind(y_GDP, y_PCE)
 ggplot(data_all) + geom_line(y = y_GDP)
 
 #1. ARX MODEL
+#let's see an average regression model
 glm(y_GDP ~ x_reg)
 summary(glm(y_GDP ~ x_reg))
+
+#Ljung-Box autocorrelation tests
 Box.test(x = resid(glm(y_GDP ~ x_reg)), type = "Ljung")
+
 glm(y_PCE ~ x_reg)
 summary(glm(y_PCE ~ x_reg))
 Box.test(x = resid(glm(y_PCE ~ x_reg)), type = "Ljung")
-#autocorrelation is presented
+#autocorrelation is presented in both cases
 
-#you should source arx_forecast function
+#arx_forecast function is needed here
 arx_GDP <- arx_forecast(lisd = 230, losd = 13, y = y_GDP, xreg = x_reg, max_ar = 5)
 arx_PCE <- arx_forecast(lisd = 230, losd = 13, y = y_PCE, xreg = x_reg, max_ar = 5)
 
-#the best model is that where the MSE is the smallest and the p-value of Ljung-Box test are larger than 0.05
+#the best model is that where the MSE is the smallest and the p-value of the Ljung-Box test are larger than 0.05
 #in both cases this is when phi = 1
 
 #MSE = 0.1295500
@@ -56,7 +60,7 @@ arx(y = y_PCE, ar = 1, mxreg = x_reg, mc = T)
 
 
 #NEURAL NETWORKS METHODOLOGY
-#ann_forecast function has to be sourced
+#ann_forecast function should be sourced
 model_ann <- ann_forecast(ltrain = 200, ltest = 30, y = y_GDP, xreg = x_reg, max_dim = 4, max_nodes = 4)
 model_ann_PCE <- ann_forecast(ltrain = 200, ltest = 30, y = y_PCE, xreg = x_reg, max_dim = 4, max_nodes = 4)
 
@@ -66,7 +70,8 @@ model_ann[which.min(model_ann[,3]),]
 model_ann_PCE[which.min(model_ann_PCE[,3]),]
 #now dim = 1, nodes = 4
 
-#for comparing a forecast and error value must be given for the out-of-sample data
+#for comparing a forecast and an error value must be given for the out-of-sample data
+#ann_out_forecast should be sourced
 ann_GDP <- ann_out_forecast(lisd = 230, losd = 13, dim = 1, nodes = 4, y = y_GDP, xreg = x_reg)
 #MSE = 0.1562852
 ann_PCE <- ann_out_forecast(lisd = 230, losd = 13, dim = 1, nodes = 4, y = y_PCE, xreg = x_reg)
@@ -74,7 +79,7 @@ ann_PCE <- ann_out_forecast(lisd = 230, losd = 13, dim = 1, nodes = 4, y = y_PCE
 
 
 #HYBRID METHODOLOGY
-#required functions: arx_forecast, ann_forecast
+#arx_forecast, ann_forecast should be sourced
 hybrid_GDP <- hybrid_forecast(y = y_GDP, xreg = x_reg, lisd = 230, losd = 13, phi = 1, brake = 0.85, max_dim = 2, max_nodes = 2)
 #MSE = 0.09614764
 hybrid_PCE <- hybrid_forecast(y = y_PCE, xreg = x_reg, lisd = 230, losd = 13, phi = 1, brake = 0.85, max_dim = 2, max_nodes = 2)
@@ -90,8 +95,8 @@ forecast_PCE <- as.matrix(rbind(arx_PCE[1,4:16], ann_PCE[2:14], hybrid_PCE[2:14]
 res_GDP <- rbind(arx_GDP[1,4:16]-y_GDP[231:243], ann_GDP[2:14]-y_GDP[231:243], hybrid_GDP[2:14]-y_GDP[231:243])
 res_PCE <- rbind(arx_PCE[1,4:16]-y_PCE[231:243], ann_PCE[2:14]-y_PCE[231:243], hybrid_PCE[2:14]-y_PCE[231:243])
 
-#you should source sum_res function
-#these matrices give the sum of residuals elements by elements
+#sum_res function should be sourced
+#these matrices give the sum of residuals in each timepoint
 sum_res_GDP <- as.matrix(sum_res(res_data = res_GDP))
 sum_res_PCE <- as.matrix(sum_res(res_data = res_PCE))
 
@@ -111,6 +116,7 @@ legend(x = 8.5, y = 1.75, c("ARX-model","ANN-model", "Hybrid model"), col=c('bla
        cex=0.55, lty=1:1, lwd=2)
 
 #DIEBOLD-MARIANO TEST
+#comparing the results of the three type of forecasts
 dm_p <- data.frame()
 dm_p[1,1] <- dm.test(e1 = forecast_GDP[1,], e2 = forecast_GDP[2,])[[4]]
 dm_p[2,1] <- dm.test(e1 = forecast_GDP[1,], e2 = forecast_GDP[3,])[[4]]
@@ -126,6 +132,7 @@ dm_p[4,2] <- dm.test(e1 = forecast_PCE[2,], e2 = forecast_PCE[3,])[[4]]
 dm_p[5,2] <- dm.test(e1 = forecast_PCE[2,], e2 = forecast_PCE[4,])[[4]]
 dm_p[6,2] <- dm.test(e1 = forecast_PCE[3,], e2 = forecast_PCE[4,])[[4]]
 
+#the results
 colnames(dm_p) <- c("GDP deflator", "PCE deflator")
 format(round(dm_p, 4))
 
@@ -144,5 +151,6 @@ dm_p_alt[4,2] <- dm.test(e1 = forecast_PCE[2,], e2 = forecast_PCE[3,], alternati
 dm_p_alt[5,2] <- dm.test(e1 = forecast_PCE[2,], e2 = forecast_PCE[4,], alternative = "less")[[4]]
 dm_p_alt[6,2] <- dm.test(e1 = forecast_PCE[3,], e2 = forecast_PCE[4,], alternative = "less")[[4]]
 
+#the results
 colnames(dm_p_alt) <- c("GDP deflator", "PCE deflator")
 format(round(dm_p_alt, 4))
