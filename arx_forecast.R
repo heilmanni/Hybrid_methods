@@ -1,20 +1,20 @@
-#this function calculate MSE values for different ARX models and shows the predicted values
+#this function calculates MSE values for different ARX models and shows the predicted values
 #lisd is the length of in_sample timeseries
 #losd is the length of out_of_sample timeseries
 #lisd and losd should be positive integers; lisd + losd cannot be longer than y
-#y is the result timeseries in vector format
+#y is the result time-series in vector format
 #xreg is a vector or matrix which consists of the regressors
 #max_ar shows the maximum number of AR lags - it should be a positive integer
 
 arx_forecast <- function(lisd, losd, y, xreg, max_ar)
 {
-  #creating a dataframe for final results
+  #creating a dataframe for the final results
   info <- data.frame()
   forecasting <- data.frame()
   
   for (phi in 1:max_ar)
   {
-    #creating a dataframe for the predcited values
+    #creating a dataframe for the predicted values
     predict <- c()
     
     #making a rolling window with the same length as the out_of_sample
@@ -31,7 +31,7 @@ arx_forecast <- function(lisd, losd, y, xreg, max_ar)
     p_value <- Box.test(resid(arx(y = full_y, ar = 1:phi, mxreg = xreg)), type = "Ljung") #computing the p-value of Ljung-Box autocorrelation test
     p_value <- as.numeric(p_value[3]) #defining p-value as a numeric variable
     MSE_ARX <- mse(actual = y[(lisd+1):(lisd+losd)], predicted = predict) #computing the MSE value between out-of-sample and forecasted values
-    info <- rbind(info, cbind(phi, MSE_ARX, p_value)) #binding the most important information
+    info <- rbind(info, cbind(phi, MSE_ARX, p_value)) #binding the most important pieces of information
     forecasting <- rbind(forecasting, predict) #binding the predicted values
   }
   final <- cbind(info, forecasting)
