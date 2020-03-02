@@ -1,4 +1,4 @@
-#this function give a matrix as result which contains the summed errors elements by elements
+#this function give a matrix as result which contains the summed errors in each timepoint
 #res_data should be a matrix which contains residuals of time-series
 
 
