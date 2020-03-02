@@ -1,11 +1,13 @@
 #this function calculate MSE values for neural network models with different embedding dimensions 
 #and with different numbers of nodes
-#ltrain means the length of training set - it must be a positive integer
-#ltest means the length of test set - it must be a positive integer
+#ltrain means the length of the training set - it must be a positive integer
+#ltest means the length of the test set - it must be a positive integer
 #y is the result timeseries - it must be a ts or vector
 #xreg is vector or matrix which contains the regressors
-#max_dim shows the maximum number of embedding dimensions for testing - it must be a positive integer; 0 to max_dim the results will be  calculated
-#max_nodes shows the maximum number of nodes for testing - it must be a positive integer; 0 to max_nodes the results will be calculated
+#max_dim shows the maximum number of embedding dimensions for testing - it must be a positive integer; 
+#from 0 to max_dim the results will be  calculated
+#max_nodes shows the maximum number of nodes for testing - it must be a positive integer; 
+#from 0 to max_nodes the results will be calculated
 
 
 ann_forecast <- function(ltrain, ltest, y, xreg, max_dim, max_nodes)
@@ -17,7 +19,7 @@ ann_forecast <- function(ltrain, ltest, y, xreg, max_dim, max_nodes)
   {
     for (nodes in 1:max_nodes)
     {
-      #creating a dataframe for the predicted values
+      #creating a vector for the predicted values
       predict <- c()
       
       #making a rolling window with the same length as the test set
@@ -27,7 +29,7 @@ ann_forecast <- function(ltrain, ltest, y, xreg, max_dim, max_nodes)
         data_x <- xreg[(1+pred):(ltrain+pred),] #x has always the same length, but the start and ending points are different
         ann_model <- nnetar(data_y, p = dim, size = nodes, repeats = 10, xreg = data_x) #calculating the exact parameters of the ann model
         fcast <- as.numeric(forecast(object = fitted(ann_model), h = 1)[[2]]) #forecasting in one-horizon length
-        predict <- c(predict, fcast) #binding the earlier and new forecasts
+        predict <- c(predict, fcast) #binding the earlier forecasts and new one
       }
       
       MSE_ANN <- mse(actual = y[(ltrain+1):(ltrain+ltest)], predicted = predict) #computing the MSE value between out-of-sample and forecasted values
