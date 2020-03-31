@@ -22,15 +22,15 @@ arx_forecast <- function(lisd, losd, y, xreg, max_ar)
     {
       data_y <- y[(1+pred):(lisd+pred)] #y has always the same length, but the start and ending points are different
       data_x <- xreg[(1+pred):(lisd+pred),] #x has always the same length, but the start and ending points are different
-      arx_model <- arx(y = data_y, ar = 1:phi, mxreg = data_x, mc = T) #calculating the exact parameters of the arx model
-      fcast <- as.numeric(forecast(object = fitted(arx_model), h = 1)[[2]]) #forecasting in one-horizon length
+      arx_model <- gets::arx(y = data_y, ar = 1:phi, mxreg = data_x, mc = T) #calculating the exact parameters of the arx model
+      fcast <- as.numeric(forecast::forecast(object = fitted(arx_model), h = 1)[[2]]) #forecasting in one-horizon length
       predict <- c(predict, fcast) #binding the earlier and new forecasts
     }
     full_y <- data.frame() #creating a dataframe
     full_y <- c(data_y[(1:lisd)], predict) #binding the original in_sample timeseries with the forecasts
-    p_value <- Box.test(resid(arx(y = full_y, ar = 1:phi, mxreg = xreg)), type = "Ljung") #computing the p-value of Ljung-Box autocorrelation test
+    p_value <- Box.test(resid(gets::arx(y = full_y, ar = 1:phi, mxreg = xreg)), type = "Ljung") #computing the p-value of Ljung-Box autocorrelation test
     p_value <- as.numeric(p_value[3]) #defining p-value as a numeric variable
-    MSE_ARX <- mse(actual = y[(lisd+1):(lisd+losd)], predicted = predict) #computing the MSE value between out-of-sample and forecasted values
+    MSE_ARX <- ModelMetrics::mse(actual = y[(lisd+1):(lisd+losd)], predicted = predict) #computing the MSE value between out-of-sample and forecasted values
     info <- rbind(info, cbind(phi, MSE_ARX, p_value)) #binding the most important pieces of information
     forecasting <- rbind(forecasting, predict) #binding the predicted values
   }
