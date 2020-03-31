@@ -8,7 +8,10 @@
 #brake should be given between 0 and 1 - it refers to the proportion of the training set to the whole in the ann model, based on the residuals of arx model
 #max_dim shows the maximum number of embedding dimensions for testing - it must be a positive integer; from 0 to max_dim the results will be  calculated
 #max_nodes shows the maximum number of nodes for testing - it must be a positive integer; from 0 to max_nodes the results will be calculated
+
 #further required functions: arx_forecast, ann_forecast
+source(file = "https://raw.githubusercontent.com/heilmanni/Hybrid_methods/master/arx_forecast.R")
+source(file = "https://raw.githubusercontent.com/heilmanni/Hybrid_methods/master/ann_forecast.R")
 
 hybrid_forecast <- function(y, xreg, lisd, losd, phi, brake, max_dim, max_nodes)
 {
@@ -23,7 +26,7 @@ hybrid_forecast <- function(y, xreg, lisd, losd, phi, brake, max_dim, max_nodes)
     
     
     #calculating the best parameters for the forecasting
-    arx_model <- arx(y = y_in_sample, ar = phi, mxreg = x_reg_in_sample, mc = T) #an arx model with a given ar lag
+    arx_model <- gets::arx(y = y_in_sample, ar = phi, mxreg = x_reg_in_sample, mc = T) #an arx model with a given ar lag
     arx_res <- arx_model$residuals #residuals of the model
     
     #creating a test and training set at a brakepoint (which gives the proportion of the training set to the whole)
@@ -40,8 +43,8 @@ hybrid_forecast <- function(y, xreg, lisd, losd, phi, brake, max_dim, max_nodes)
     best_size <- as.numeric(best_param[2])
     
     #forecasting with the given params
-    arx_fcast <- as.numeric(forecast(object = fitted(arx_model), h = 1)[[2]]) #arx forecast for the next period
-    nn_fcast <- as.numeric(forecast(object = fitted(nnetar(y = arx_res, xreg = x_reg_in_sample[(phi+1):lisd,],
+    arx_fcast <- as.numeric(forecast::forecast(object = fitted(arx_model), h = 1)[[2]]) #arx forecast for the next period
+    nn_fcast <- as.numeric(forecast::forecast(object = fitted(forecast::nnetar(y = arx_res, xreg = x_reg_in_sample[(phi+1):lisd,],
                                                            p = best_p, size = best_size, repeats = 10)),
                                     h = 1)[[2]]) #nn forecast for the next period's residual
     fcast <- arx_fcast + nn_fcast #the forecast is the sum of the two predictions
@@ -51,7 +54,7 @@ hybrid_forecast <- function(y, xreg, lisd, losd, phi, brake, max_dim, max_nodes)
     print(pred)
   }
   
-  MSE_hybrid <- mse(actual = y[(lisd+1):(lisd+losd)], predicted = predict) 
+  MSE_hybrid <- ModelMetrics::mse(actual = y[(lisd+1):(lisd+losd)], predicted = predict) 
   final <- c(MSE_hybrid, predict) #final results
   
   return(final)
