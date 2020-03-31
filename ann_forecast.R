@@ -27,12 +27,12 @@ ann_forecast <- function(ltrain, ltest, y, xreg, max_dim, max_nodes)
       {
         data_y <- y[(1+pred):(ltrain+pred)] #y has always the same length, but the start and ending points are different
         data_x <- xreg[(1+pred):(ltrain+pred),] #x has always the same length, but the start and ending points are different
-        ann_model <- nnetar(data_y, p = dim, size = nodes, repeats = 10, xreg = data_x) #calculating the exact parameters of the ann model
-        fcast <- as.numeric(forecast(object = fitted(ann_model), h = 1)[[2]]) #forecasting in one-horizon length
+        ann_model <- forecast::nnetar(data_y, p = dim, size = nodes, repeats = 10, xreg = data_x) #calculating the exact parameters of the ann model
+        fcast <- as.numeric(forecast::forecast(object = fitted(ann_model), h = 1)[[2]]) #forecasting in one-horizon length
         predict <- c(predict, fcast) #binding the earlier forecasts and new one
       }
       
-      MSE_ANN <- mse(actual = y[(ltrain+1):(ltrain+ltest)], predicted = predict) #computing the MSE value between out-of-sample and forecasted values
+      MSE_ANN <- ModelMetrics::mse(actual = y[(ltrain+1):(ltrain+ltest)], predicted = predict) #computing the MSE value between out-of-sample and forecasted values
       info <- rbind(info, cbind(dim, nodes, MSE_ANN)) #binding the most important information
     }
   }
@@ -53,11 +53,11 @@ ann_out_forecast <- function(lisd, losd, dim, nodes, y, xreg)
   {
     data_y <- y[(1+pred):(lisd+pred)] #y has always the same length, but the start and ending points are different
     data_x <- xreg[(1+pred):(lisd+pred),] #x has always the same length, but the start and ending points are different
-    ann_model <- nnetar(data_y, p = dim, size = nodes, repeats = 10, xreg = data_x) #calculating the exact parameters of the ann model
-    fcast <- as.numeric(forecast(object = fitted(ann_model), h = 1)[[2]]) #forecasting in one-horizon length
+    ann_model <- forecast::nnetar(data_y, p = dim, size = nodes, repeats = 10, xreg = data_x) #calculating the exact parameters of the ann model
+    fcast <- as.numeric(forecast::forecast(object = fitted(ann_model), h = 1)[[2]]) #forecasting in one-horizon length
     predict <- c(predict, fcast) #binding the earlier and new forecasts
   }
-  MSE_ANN_out <- mse(actual = y[(lisd+1):(lisd+losd)], predicted = predict) #computing the MSE value between out-of-sample and forecasted values
+  MSE_ANN_out <- ModelMetrics::mse(actual = y[(lisd+1):(lisd+losd)], predicted = predict) #computing the MSE value between out-of-sample and forecasted values
   final <- c(MSE_ANN_out, predict)
   
   return(final)
