@@ -5,15 +5,18 @@
 #y is the result time-series in vector format
 #xreg is a vector or matrix which consists of the regressors
 #max_ar shows the maximum number of AR lags - it should be a positive integer
+
 arx_forecast <- function(lisd, losd, y, xreg, max_ar)
 {
   #creating a dataframe for the final results
   info <- data.frame()
   forecasting <- data.frame()
+  
   for (phi in 1:max_ar)
   {
     #creating a dataframe for the predicted values
     predict <- c()
+    
     #making a rolling window with the same length as the out_of_sample
     for (pred in 0:(losd-1))
     {
