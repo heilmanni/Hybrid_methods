@@ -28,13 +28,14 @@ arx_forecast <- function(lisd, losd, y, xreg, max_ar)
     }
     full_y <- data.frame() #creating a dataframe
     full_y <- c(data_y[(1:lisd)], predict) #binding the original in_sample timeseries with the forecasts
-    p_value <- Box.test(resid(gets::arx(y = full_y, ar = 1:phi, mxreg = xreg)), type = "Ljung") #computing the p-value of Ljung-Box autocorrelation test
-    p_value <- as.numeric(p_value[3]) #defining p-value as a numeric variable
+    stationarity_p <- as.numeric(tseries::adf.test(x = full_y, k = phi)[[4]])
+    autocorrelation_p <- stats::Box.test(resid(gets::arx(y = full_y, ar = 1:phi, mxreg = xreg)), type = "Ljung") #computing the p-value of Ljung-Box autocorrelation test
+    autocorrelation_p <- as.numeric(autocorrelation_p[3]) #defining p-value as a numeric variable
     MSE_ARX <- ModelMetrics::mse(actual = y[(lisd+1):(lisd+losd)], predicted = predict) #computing the MSE value between out-of-sample and forecasted values
-    info <- rbind(info, cbind(phi, MSE_ARX, p_value)) #binding the most important pieces of information
+    info <- rbind(info, cbind(phi, MSE_ARX, stationarity_p, autocorrelation_p)) #binding the most important pieces of information
     forecasting <- rbind(forecasting, predict) #binding the predicted values
   }
   final <- cbind(info, forecasting)
-  colnames(final) <- c("phi", "MSE_ARX", "p_value", c(1:losd))
+  colnames(final) <- c("phi", "MSE_ARX", "ADF-test p-value", "Ljung-Box test p-value", c(1:losd))
   return(final)
 }
